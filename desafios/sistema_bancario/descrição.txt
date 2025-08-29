@@ -1,5 +1,6 @@
 Criar um sistema bancário com as operações: sacar, depositar, e visualizar extrato.
 
+V1:
 1 - Deve ser possível depositar valores positivos para a minha conta bancária. A v1 do projeto trabalha apenas com 1 usuário, dessa forma não precisamos nos preocupar em identificar qual é o número da agência e conta bancária. Todos os depositos deve ser armazenados em uma variável e exibidos na operação de extrato.
 
 2 - O sistema deve permitir 3 saques diários com limite máximo de R$500,00 por saque. Caso o usuário não tenha saldo em conta, o sistema deve exibir uma mensagem informando que não será possível sacar o dinheiro por falta de saldo. Todos os saques devem ser armazenados em uma variável e exibidos na operação de extrato.
@@ -7,3 +8,16 @@ Criar um sistema bancário com as operações: sacar, depositar, e visualizar ex
 3 - A operação de extrato deve listar todos os depositos e saques realizados na conta. No fim da listagem deve ser exibido o saldo atual da conta. Os valores devem ser exibidos usando o formato R$ xxx.xx
 Exemplo:
 1500.45 = R$ 1500.45
+===========================================================
+V2:
+1 - Criar funções para operações existentes como sacar, depositar e visualizar hitórico
+    1.1 - A função saque deve receber os argumentos apenas por nome (keyword only)
+    1.2 - A função de deposito deve receber os argumentos apenas por posição (positional only)
+    1.3 - A função extrado deve receber os argumentos por posição e nome. ex: posicional(saldo) nomeados    (extrato)
+2 - Criar 2 funções novas que é cadastro de usuário, criar conta corrente e vincular com usuário
+3 - Fique a vontade para criar mais funções ex: listar_contas, listar_usuario, inativar_conta
+4 - O programa deve armazenar os usuários em uma lista. O usuário é composto por nome, data de nascimento, cpf e endereço. O endereço é uma string com o formato: logradouro, numero - bairro - cidade/uf. Deve ser armazenado somente os números do cpf sem ponto ou traço. Não podemos cadastrar 2 usuários com o mesmo CPF.
+5 - O programa deve armazenar contas em uma lista, uma conta é composta por: agência, número da conta e usuário. O número da conta é sequencial, iniciando em 1. O número da agência é fixo: "001". O usuário pode ter mais de uma conta mas 1 conta pertence apenas a 1 único usuário.
+DICA: Para vincular um usuário a uma conta, filtre a lista de usuários buscando o número do CPF informado para cada usuário da lista.
+
+Material de consulta: https://docs.python.org/pt-br/3.13/tutorial/controlflow.html#defining-functions
