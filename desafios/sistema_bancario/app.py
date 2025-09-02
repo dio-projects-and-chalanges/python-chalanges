@@ -8,9 +8,16 @@ deposit_day = 0
 withdrawal_limit = 500
 statement = ""
 withdrawal_count = 0
-MAX_WITHDRAWALS = 3
+account_counter = 1
+generated_numbers = set()
 
-database = {"users": [], "addresses": [], "bank_accounts": []}
+MAX_WITHDRAWALS = 3
+BANK_BRACH = "001"
+
+database = {
+    "users": [], 
+    "addresses": [], 
+}
 
 # ANSI code for colors
 LIGHT_GREEN = "\033[92m"
@@ -121,7 +128,7 @@ def create_user(
     user_exists = user_already_exists(cpf)
 
     if not user_exists:
-        new_user = {"cpf": {cpf},"password": {password},"name": {name},"last_name": {last_name},"birthday": {birthday},"address": {address}}
+        new_user = {"bank_accounts": [], "cpf": {cpf},"password": {password},"name": {name},"last_name": {last_name},"birthday": {birthday},"address": {address}}
         database["users"].append(new_user)
         clear_console()
         print(f"{LIGHT_GREEN}✓ Usuário cadastrado com sucesso!!{RESET}")
@@ -144,38 +151,83 @@ def login(*, cpf: int, password: str) -> bool:
     
     if cpf in user_credentials.get("cpf", set()) and password in user_credentials.get("password", set()):
         return True
+    
+def generate_account_number():
+
+    # ADICIONAR A LÓGICA DE GERAÇÂO DE NUMERO DA CONTA
+
+    generated_numbers.add()
+    pass
+    
+def create_account():
+    global account_counter
+
+    # COLOCAR A LÓGICA AQUI
+
+    account_counter +=1
+    pass
 
 title = " Bem vindo ao banco Pybank "
 title = title.center(len(title) + 10, "#")
 
-menu_login = f"""
-    {title}
+menu_login = f"""c
+    {BLUE}{title}{RESET}
     c: cadastrar uma conta
     e: entrar
-    s: sair
+    q: sair
 ===> """
 
-def bank_main_screen(last_name, name) -> None:
+# def bank_main_screen(last_name, name) -> None:
+#     menu = f"""
+#         {BLUE}Bem vindo ao Pybank {name} em que posso ajudar?{RESET}
+#         d: depositar
+#         s: sacar
+#         e: extrato
+#         q: sair
+#     ===> """
+#     while True:
+#         response = input(menu)
+
+#         clear_console()
+#         if response == "d":
+#             deposit_value = input("Digite o valor do depósito que deseja realizar: ")
+#             deposit_value = int(deposit_value)
+#             deposit(deposit_value)
+#         elif response == "s":
+#             local_withdrawal = input("Informe o valor que deseja sacar: ")
+#             local_withdrawal = int(local_withdrawal)
+#             withdraw(local_withdrawal=local_withdrawal)
+#         elif response == "e":
+#             statement_history(1, account_number=2)
+#         elif response == "q":
+#             clear_console()
+#             print(f"{LIGHT_GREEN}✓ Obrigado por utilizar o Pybank, volte sempre =D{RESET}")
+#             break
+#         else:
+#             print(f"{LIGHT_RED}X Operação inválida, favor selecionar uma das opções do menu{RESET}")
+        
+#         time.sleep(1)
+
+def account_main_screen(name) -> None:
     menu = f"""
         {BLUE}Bem vindo ao Pybank {name} em que posso ajudar?{RESET}
-        d: depositar
-        s: sacar
-        e: extrato
+        c: cadastrar nova conta
+        a: acessar contas
+        d: deletar conta
         q: sair
     ===> """
     while True:
         response = input(menu)
 
         clear_console()
-        if response == "d":
-            deposit_value = input("Digite o valor do depósito que deseja realizar: ")
-            deposit_value = int(deposit_value)
-            deposit(deposit_value)
-        elif response == "s":
+        if response == "c":
+            # PASSAR O USUÀRIO NO PARAMETRO
+            create_account()
+        elif response == "a":
             local_withdrawal = input("Informe o valor que deseja sacar: ")
             local_withdrawal = int(local_withdrawal)
             withdraw(local_withdrawal=local_withdrawal)
-        elif response == "e":
+        elif response == "d":
             statement_history(1, account_number=2)
         elif response == "q":
             clear_console()
@@ -215,11 +267,11 @@ def login_screen():
 
             if is_logged:
                 clear_console()
-                bank_main_screen(last_name, name)
+                account_main_screen(name)
             else:
                 clear_console()
                 print(f"{LIGHT_RED}X Login ou senha incorretos, favor tentar mais tarde{RESET}")
-        elif response == "s":
+        elif response == "q":
             clear_console()
             print(f"{LIGHT_GREEN}✓ Obrigado por utilizar o Pybank, volte sempre =D{RESET}")
             break
