@@ -1,6 +1,8 @@
 import os
 import time
 import getpass
+import random
+import string
 
 balance = 0
 withdrawal = 0
@@ -16,7 +18,6 @@ BANK_BRACH = "001"
 
 database = {
     "users": [], 
-    "addresses": [], 
 }
 
 # ANSI code for colors
@@ -152,20 +153,34 @@ def login(*, cpf: int, password: str) -> bool:
     if cpf in user_credentials.get("cpf", set()) and password in user_credentials.get("password", set()):
         return True
     
-def generate_account_number():
+def generate_account_number(min_digits=8, max_digits=13):
+    global generated_numbers
 
-    # ADICIONAR A LÓGICA DE GERAÇÂO DE NUMERO DA CONTA
+    num_digits = random.randint(min_digits, max_digits)
+    account_number = ''.join(random.choices(string.digits, k=num_digits))
 
-    generated_numbers.add()
-    pass
+    if account_number not in generated_numbers:
+        generated_numbers.add(account_number)
+        return account_number
+
+    return None
     
-def create_account():
+def create_account(cpf) -> None:
     global account_counter
 
-    # COLOCAR A LÓGICA AQUI
+    user = get_user_by_cpf(cpf)
+    branch = BANK_BRACH
+    account_number = account_counter
 
+    new_account = {"user_account": user["cpf"], "branch": branch, "account_number": account_number}
+
+    user["bank_accounts"].append(new_account)
     account_counter +=1
-    pass
+    
+    clear_console()
+    print(f"{LIGHT_GREEN}✓ Conta criada com sucesso!!{RESET}")
+    
+    return
 
 title = " Bem vindo ao banco Pybank "
 title = title.center(len(title) + 10, "#")
@@ -208,12 +223,53 @@ menu_login = f"""c
         
 #         time.sleep(1)
 
-def account_main_screen(name) -> None:
+def account_show_screen(name, cpf) -> None:
+    user = get_user_by_cpf(cpf)
+
+    if not user["bank_accounts"]:
+        menu = f""" 
+            {BLUE}Poxa {name}, você ainda não tem conta no Pybank{RESET}
+            [q] sair
+        ===> """
+    else:
+        accounts_list = ""
+        for account in user["bank_accounts"]:
+            accounts_list += f"""
+            número da conta: {account.get('account_number', 'N/A')} - agência: {account.get('branch', 'N/A')}
+            """
+
+        menu = f""" 
+            {BLUE}Olá {name}! aqui esta suas contas no Pybank:{RESET}
+            {accounts_list}
+            [a] acessar conta através do número
+            [d] deletar conta através do número
+            [q] sair
+        ===> """
+
+
+    while True:
+        response = input(menu)
+
+        clear_console()
+        if response == "c":
+            create_account(cpf)
+        elif response == "a":
+            local_withdrawal = input("Informe o valor que deseja sacar: ")
+            local_withdrawal = int(local_withdrawal)
+            withdraw(local_withdrawal=local_withdrawal)
+        elif response == "q":
+            clear_console()
+            break
+        else:
+            print(f"{LIGHT_RED}X Operação inválida, favor selecionar uma das opções do menu{RESET}")
+        
+        time.sleep(1)
+
+def account_main_screen(name, cpf) -> None:
     menu = f"""
         {BLUE}Bem vindo ao Pybank {name} em que posso ajudar?{RESET}
         c: cadastrar nova conta
         a: acessar contas
-        d: deletar conta
         q: sair
     ===> """
     while True:
@@ -221,14 +277,9 @@ def account_main_screen(name) -> None:
 
         clear_console()
         if response == "c":
-            # PASSAR O USUÀRIO NO PARAMETRO
-            create_account()
+            create_account(cpf)
         elif response == "a":
-            local_withdrawal = input("Informe o valor que deseja sacar: ")
-            local_withdrawal = int(local_withdrawal)
-            withdraw(local_withdrawal=local_withdrawal)
-        elif response == "d":
-            statement_history(1, account_number=2)
+            account_show_screen(name, cpf)
         elif response == "q":
             clear_console()
             print(f"{LIGHT_GREEN}✓ Obrigado por utilizar o Pybank, volte sempre =D{RESET}")
@@ -267,7 +318,7 @@ def login_screen():
 
             if is_logged:
                 clear_console()
-                account_main_screen(name)
+                account_main_screen(name, cpf)
             else:
                 clear_console()
                 print(f"{LIGHT_RED}X Login ou senha incorretos, favor tentar mais tarde{RESET}")
