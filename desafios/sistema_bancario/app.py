@@ -4,12 +4,6 @@ import getpass
 import random
 import string
 
-balance = 0
-withdrawal = 0
-deposit_day = 0
-withdrawal_limit = 500
-statement = ""
-withdrawal_count = 0
 account_counter = 1
 generated_numbers = set()
 
@@ -32,62 +26,56 @@ RESET = "\033[0m"
 def clear_console() -> None:
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def deposit(deposit_value: int, /) -> None:
-    global balance
-    global deposit_day
+def deposit(deposit_value: int, account, /) -> None:
 
     print(f"{LIGHT_GREEN}✓ Operação de depósito selecionada{RESET}")
-    print(f"{BLUE}Seu saldo atual é de: R$ {balance:.2f} {RESET}")
+    print(f"{BLUE}Seu saldo atual é de: R$ {account.get('balance', 0):.2f} {RESET}")
 
     if deposit_value <= 0:
         print(f"{DARK_RED} Operação invalida, o valor deve ser maior que R$ 0.00{RESET}")
         return
     
-    balance += deposit_value
-    deposit_day += deposit_value
+    account["balance"] += deposit_value
+    account["deposit_day"] += deposit_value
     print(f"{LIGHT_GREEN}Depósito de R$ {deposit_value:.2f} realizado com sucesso!{RESET}")
     return
 
-def withdraw(*, local_withdrawal: int) -> None:
-    global balance
-    global withdrawal
-    global withdrawal_count
-    global withdrawal_limit
+def withdraw(*, local_withdrawal: int, account) -> None:
 
     print(f"{LIGHT_GREEN}✓ Operação de saque selecionada{RESET}")
 
-    if balance <= 0:
-        print(f"{YELLOW}Operação de saque cancelada por saldo insuficiente R$ {balance:.2f} {RESET}")
+    if account.get('balance', 0) <= 0:
+        print(f"{YELLOW}Operação de saque cancelada por saldo insuficiente R$ {account.get('balance', 0):.2f} {RESET}")
         return
-    if withdrawal_count >= MAX_WITHDRAWALS:
+    if account.get('withdrawal_count', 0) >= MAX_WITHDRAWALS:
         print(f"{LIGHT_RED}X Você ultrapassou a quantidade de saques diarios permitido{RESET}")
         return
-    elif local_withdrawal > withdrawal_limit:
+    elif local_withdrawal > account.get('withdrawal_limit', 0):
         print(f"{LIGHT_RED}X Você ultrapassou o limite máximo de R$ 500.00 por saque{RESET}")
         return
-    elif local_withdrawal > balance:
+    elif local_withdrawal > account.get('balance', 0):
         print(f"{LIGHT_RED}X O valor de saque é maior do que o seu saldo{RESET}")
         return
     
     print(f"{LIGHT_GREEN}✓ Saque no valor de R$ {local_withdrawal} realizado com sucesso {RESET}")
-    balance -= local_withdrawal
-    withdrawal += local_withdrawal
-    withdrawal_count += 1
-    print(f"{BLUE}Novo saldo total R$ {balance} {RESET}")
+    account['balance'] -= local_withdrawal
+    account['withdrawal'] += local_withdrawal
+    account['withdrawal_count'] += 1
+    print(f"{BLUE}Novo saldo total R$ {account.get('balance', 0):.2f} {RESET}")
 
-def statement_history(cpf: int, /, *, account_number: int) -> None:
-    global balance
-    global withdrawal
-    global statement
-    global deposit_day
+def statement_history(cpf: int, /, *, account) -> None:
+    user = get_user_by_cpf(cpf)
 
-    statement = f"""
-    Total de depositos do dia R$ {deposit_day:.2f}
-    Total de saques do dia R$ {withdrawal:.2f}
-    Total de saldo da conta R$ {balance:.2f}
+    name = user.get('name', '')
+
+    account['statement'] = f"""
+    =================== {name} segue o extrato da sua conta ===================
+    Total de depositos do dia R$ {account.get('deposit_day', 0):.2f}
+    Total de saques do dia R$ {account.get('withdrawal', 0):.2f}
+    Total de saldo da conta R$ {account.get('balance', 0):.2f}
     """
 
-    print(f"{BLUE} {statement} {RESET}")
+    print(f"{BLUE} {account.get('statement', 'N/A')} {RESET}")
 
 def cpf_processor(cpf: str) -> int:
     int_cpf = cpf.replace(".", "").replace("-", "").replace("/", "")
@@ -172,7 +160,17 @@ def create_account(cpf) -> None:
     branch = BANK_BRACH
     account_number = account_counter
 
-    new_account = {"user_account": user["cpf"], "branch": branch, "account_number": account_number}
+    new_account = {
+        "user_account": user["cpf"], 
+        "branch": branch, 
+        "account_number": account_number, 
+        "balance": 0, 
+        "deposit_day": 0,
+        "withdrawal": 0,
+        "withdrawal_count": 0,
+        "withdrawal_limit": 500,
+        "statement": ""
+    }
 
     user["bank_accounts"].append(new_account)
     account_counter +=1
@@ -227,46 +225,67 @@ def show_banck_accounts(cpf: int, name: str, show=False):
     
     return
 
+
+def get_account_by_cpf_and_account_number(cpf, account_number):
+    user = get_user_by_cpf(cpf)
+
+    for account in user["bank_accounts"]:
+        if account_number == account.get("account_number", None):
+            return account
+    return None
+
 title = " Bem vindo ao banco Pybank "
 title = title.center(len(title) + 10, "#")
 
 menu_login = f"""c
     {BLUE}{title}{RESET}
-    c: cadastrar uma conta
+    c: cadastrar novo usuário
     e: entrar
     q: sair
 ===> """
 
-# def bank_main_screen(last_name, name) -> None:
-#     menu = f"""
-#         {BLUE}Bem vindo ao Pybank {name} em que posso ajudar?{RESET}
-#         d: depositar
-#         s: sacar
-#         e: extrato
-#         q: sair
-#     ===> """
-#     while True:
-#         response = input(menu)
+def bank_accounts_main_screen(cpf, name, account_number) -> None:
+    menu = f"""
+        {BLUE}{name} você esta na conta de numero {account_number} em que posso ajudar?{RESET}
+        d: depositar
+        s: sacar
+        e: extrato
+        q: sair
+    ===> """
+    account = get_account_by_cpf_and_account_number(cpf, account_number)
+    
+    while True:
+        response = input(menu)
 
-#         clear_console()
-#         if response == "d":
-#             deposit_value = input("Digite o valor do depósito que deseja realizar: ")
-#             deposit_value = int(deposit_value)
-#             deposit(deposit_value)
-#         elif response == "s":
-#             local_withdrawal = input("Informe o valor que deseja sacar: ")
-#             local_withdrawal = int(local_withdrawal)
-#             withdraw(local_withdrawal=local_withdrawal)
-#         elif response == "e":
-#             statement_history(1, account_number=2)
-#         elif response == "q":
-#             clear_console()
-#             print(f"{LIGHT_GREEN}✓ Obrigado por utilizar o Pybank, volte sempre =D{RESET}")
-#             break
-#         else:
-#             print(f"{LIGHT_RED}X Operação inválida, favor selecionar uma das opções do menu{RESET}")
+        clear_console()
+        if response == "d":
+            deposit_value = input("Digite o valor do depósito que deseja realizar: ")
+            deposit_value = int(deposit_value)
+            deposit(deposit_value, account)
+        elif response == "s":
+            local_withdrawal = input("Informe o valor que deseja sacar: ")
+            local_withdrawal = int(local_withdrawal)
+            withdraw(local_withdrawal=local_withdrawal, account=account)
+        elif response == "e":
+            statement_history(cpf, account=account)
+        elif response == "q":
+            clear_console()
+            print(f"{LIGHT_GREEN}✓ Obrigado por utilizar o Pybank, volte sempre =D{RESET}")
+            break
+        else:
+            print(f"{LIGHT_RED}X Operação inválida, favor selecionar uma das opções do menu{RESET}")
         
-#         time.sleep(1)
+        time.sleep(1)
+
+def bank_account_exists(cpf: int, account_number: int) -> bool:
+    user = get_user_by_cpf(cpf)
+
+    for account in user["bank_accounts"]:
+        if account_number == account.get("account_number", None):
+            return True
+        
+    print(f"{LIGHT_RED}X favor selecionar uma conta válida{RESET}")
+    return False
 
 def account_show_screen(name, cpf) -> None:
     menu = show_banck_accounts(cpf, name)
@@ -276,7 +295,12 @@ def account_show_screen(name, cpf) -> None:
 
         clear_console()
         if response == "a":
-            pass
+            account_number = input("Informe o número da conta que deseja acessar: ")
+            account_number = int(account_number)
+            account_existis = bank_account_exists(cpf, account_number)
+
+            if account_existis:
+                bank_accounts_main_screen(cpf, name, account_number)
         elif response == "d":
             account_number = input("Informe o número da conta que deseja deletar: ")
             account_number = int(account_number)
