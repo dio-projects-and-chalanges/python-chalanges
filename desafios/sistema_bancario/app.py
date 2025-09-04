@@ -99,7 +99,7 @@ def user_already_exists(cpf: int) -> bool:
     if not database.get("users"):
         return False
     for user in database.get("users"):
-        if cpf in user.get("cpf", set()):
+        if cpf == user.get("cpf"):
             return True
     return False
 
@@ -110,7 +110,7 @@ def get_user_by_cpf(cpf: int) -> list:
         return None
     
     for user in database.get("users"):
-        if cpf in user.get("cpf", set()):
+        if cpf == user.get("cpf", None):
             return user
 
     return None
@@ -129,7 +129,7 @@ def create_user(
     user_exists = user_already_exists(cpf)
 
     if not user_exists:
-        new_user = {"bank_accounts": [], "cpf": {cpf},"password": {password},"name": {name},"last_name": {last_name},"birthday": {birthday},"address": {address}}
+        new_user = {"bank_accounts": [], "cpf": cpf,"password": password,"name": name,"last_name": last_name,"birthday": birthday,"address": address}
         database["users"].append(new_user)
         clear_console()
         print(f"{LIGHT_GREEN}✓ Usuário cadastrado com sucesso!!{RESET}")
@@ -150,7 +150,7 @@ def login(*, cpf: int, password: str) -> bool:
     if not user_credentials:
         return False
     
-    if cpf in user_credentials.get("cpf", set()) and password in user_credentials.get("password", set()):
+    if cpf == user_credentials.get("cpf", None) and password == user_credentials.get("password", None):
         return True
     
 def generate_account_number(min_digits=8, max_digits=13):
@@ -179,6 +179,51 @@ def create_account(cpf) -> None:
     
     clear_console()
     print(f"{LIGHT_GREEN}✓ Conta criada com sucesso!!{RESET}")
+    
+    return
+
+def delete_bank_account(account_number: int, cpf: int):
+    user = get_user_by_cpf(cpf)
+
+    if not user["bank_accounts"]:
+        print(f"{YELLOW}Não existe mais contas para exclusão.{RESET}")
+        return
+
+    for account in user["bank_accounts"]:
+        if account_number == account.get("account_number", None):
+            user["bank_accounts"].remove(account)
+            print(f"{LIGHT_GREEN}✓ Conta deletada com sucesso!!{RESET}")
+            return
+
+    print(f"{LIGHT_RED}X Conta não encontrada para exclusão.{RESET}")
+    return
+
+def show_banck_accounts(cpf: int, name: str, show=False):
+    user = get_user_by_cpf(cpf)
+
+    if not user["bank_accounts"]:
+        clear_console()
+        menu = f""" 
+            {BLUE}Poxa {name}, você ainda não tem conta no Pybank{RESET}
+            [q] sair
+        ===> """
+    else:
+        accounts_list = ""
+        for account in user["bank_accounts"]:
+            accounts_list += f"""
+            número da conta: {account.get('account_number', 'N/A')} - agência: {account.get('branch', 'N/A')}
+            """
+
+        menu = f""" 
+            {BLUE}Olá {name}! aqui esta suas contas no Pybank:{RESET}
+            {accounts_list}
+            [a] acessar conta através do número
+            [d] deletar conta através do número
+            [q] sair
+        ===> """
+
+    if not show:
+        return menu
     
     return
 
@@ -224,45 +269,25 @@ menu_login = f"""c
 #         time.sleep(1)
 
 def account_show_screen(name, cpf) -> None:
-    user = get_user_by_cpf(cpf)
-
-    if not user["bank_accounts"]:
-        menu = f""" 
-            {BLUE}Poxa {name}, você ainda não tem conta no Pybank{RESET}
-            [q] sair
-        ===> """
-    else:
-        accounts_list = ""
-        for account in user["bank_accounts"]:
-            accounts_list += f"""
-            número da conta: {account.get('account_number', 'N/A')} - agência: {account.get('branch', 'N/A')}
-            """
-
-        menu = f""" 
-            {BLUE}Olá {name}! aqui esta suas contas no Pybank:{RESET}
-            {accounts_list}
-            [a] acessar conta através do número
-            [d] deletar conta através do número
-            [q] sair
-        ===> """
-
+    menu = show_banck_accounts(cpf, name)
 
     while True:
         response = input(menu)
 
         clear_console()
-        if response == "c":
-            create_account(cpf)
-        elif response == "a":
-            local_withdrawal = input("Informe o valor que deseja sacar: ")
-            local_withdrawal = int(local_withdrawal)
-            withdraw(local_withdrawal=local_withdrawal)
+        if response == "a":
+            pass
+        elif response == "d":
+            account_number = input("Informe o número da conta que deseja deletar: ")
+            account_number = int(account_number)
+            delete_bank_account(account_number, cpf)
+            menu = show_banck_accounts(cpf, name)
         elif response == "q":
             clear_console()
             break
         else:
             print(f"{LIGHT_RED}X Operação inválida, favor selecionar uma das opções do menu{RESET}")
-        
+            continue
         time.sleep(1)
 
 def account_main_screen(name, cpf) -> None:
@@ -318,6 +343,8 @@ def login_screen():
 
             if is_logged:
                 clear_console()
+                user = get_user_by_cpf(cpf)
+                name = user.get("name", "")
                 account_main_screen(name, cpf)
             else:
                 clear_console()
